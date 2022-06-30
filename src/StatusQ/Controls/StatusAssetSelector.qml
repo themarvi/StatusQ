@@ -128,16 +128,18 @@ Item {
             background: Rectangle {
                 color: itemContainer.highlighted ? Theme.palette.statusSelect.menuItemHoverBackgroundColor : Theme.palette.statusSelect.menuItemBackgroundColor
             }
+            // To-do move this out of StatusQ, this involves dependency on BE code
             Component.onCompleted: {
                 if(index === 0 ) {
-                    selectedAsset = { name: name, symbol: symbol, totalBalance: totalBalance, totalCurrencyBalance: totalCurrencyBalance}
+                    selectedAsset = { name: name, symbol: symbol, totalBalance: totalBalance, totalCurrencyBalance: totalCurrencyBalance, balances: balances}
                 }
             }
             MouseArea {
                 cursorShape: Qt.PointingHandCursor
                 anchors.fill: itemContainer
                 onClicked: {
-                    selectedAsset = {name: name, symbol: symbol, totalBalance: totalBalance, totalCurrencyBalance: totalCurrencyBalance}
+                    // To-do move this out of StatusQ, this involves dependency on BE code
+                    selectedAsset = {name: name, symbol: symbol, totalBalance: totalBalance, totalCurrencyBalance: totalCurrencyBalance, balances: balances}
                     select.selectMenu.close()
                 }
             }
