@@ -24,13 +24,13 @@ import StatusQ.Controls 0.1
    For a list of components available see StatusQ.
 */
 StatusValidator {
-    id: root
+    id: root    
 
     /*!
-       \qmlproperty string StatusFloatValidator::bottom
-       This property holds the validator's lowest acceptable value. By default, this property's value is derived from the lowest signed float available (typically -2147483647).
+       \qmlproperty real StatusFloatValidator::bottom
+       This property holds the validator's lowest acceptable value. By default, this property's value is derived from the lowest signed float available.
     */
-    property real bottom
+    property real bottom: qmlDoubleValidator.bottom
 
     /*!
        \qmlproperty string StatusFloatValidator::locale
@@ -39,10 +39,16 @@ StatusValidator {
     property string locale
 
     /*!
-       \qmlproperty string StatusFloatValidator::top
-       This property holds the validator's highest acceptable value. By default, this property's value is derived from the highest float available (typically 2147483647).
+       \qmlproperty real StatusFloatValidator::top
+       This property holds the validator's highest acceptable value. By default, this property's value is derived from the highest float available.
     */
-    property real top
+    property real top: qmlDoubleValidator.top
+
+    /*!
+       \qmlproperty DoubleValidator StatusFloatValidator::qmlDoubleValidator
+       This property holds a default qml double validator instance.
+    */
+    readonly property DoubleValidator qmlDoubleValidator: DoubleValidator {}
 
     name: "floatValidator"
     errorMessage: qsTr("Please enter a valid numeric value.")
