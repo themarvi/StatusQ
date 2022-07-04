@@ -7,20 +7,20 @@ import StatusQ.Components 0.1
 import StatusQ.Controls 0.1
 
 Item {
-    id: statusMessageHeader
+    id: root
+
+    property StatusMessageSenderDetails sender: StatusMessageSenderDetails { }
 
     property alias displayNameLabel: primaryDisplayName
     property alias secondaryNameLabel: secondaryDisplayName
     property alias tertiaryDetailsLabel: tertiaryDetailText
     property alias timestamp: timestampText
 
-    property string displayName: ""
-    property string secondaryName: ""
-    property string tertiaryDetail: ""
+    property string tertiaryDetail: sender.id
     property string resendText: ""
     property bool showResendButton: false
-    property bool isMutualContact: false
-    property var trustIndicator: StatusContactVerificationIcons.TrustedType.None
+    property bool isMutualContact: sender.isMutualContact
+    property int trustIndicator: sender.trustIndicator
 
     signal clicked()
     signal resendClicked()
@@ -41,7 +41,7 @@ Item {
             wrapMode: Text.WordWrap
             selectByMouse: true
             color: Theme.palette.primaryColor1
-            text: displayName
+            text: root.sender.displayName
             MouseArea {
                 id: mouseArea
                 anchors.fill: parent
@@ -49,22 +49,22 @@ Item {
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 hoverEnabled: true
                 onClicked: {
-                    statusMessageHeader.clicked()
+                    root.clicked()
                 }
             }
             Layout.alignment: Qt.AlignBottom
         }       
         StatusContactVerificationIcons {
-            isMutualContact: statusMessageHeader.isMutualContact
-            trustIndicator: statusMessageHeader.trustIndicator
+            isMutualContact: root.isMutualContact
+            trustIndicator: root.trustIndicator
         }
         StatusBaseText {
             id: secondaryDisplayName
             Layout.alignment: Qt.AlignVCenter
             color: Theme.palette.baseColor1
             font.pixelSize: 10
-            text: secondaryName
-            visible: !!text
+            text: `(${root.sender.secondaryName})`
+            visible: !!root.sender.secondaryName
         }
         StatusBaseText {
             id: dotSeparator1
@@ -98,12 +98,12 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             color: Theme.palette.dangerColor1
             font.pixelSize: 12
-            text: statusMessageHeader.resendText
+            text: root.resendText
             visible: showResendButton && !!timestampText.text
             MouseArea {
                 cursorShape: Qt.PointingHandCursor
                 anchors.fill: parent
-                onClicked: statusMessageHeader.resendClicked()
+                onClicked: root.resendClicked()
             }
         }
     }

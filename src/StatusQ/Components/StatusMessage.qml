@@ -8,7 +8,7 @@ import StatusQ.Controls 0.1
 import "./private/statusMessage"
 
 Rectangle {
-    id: statusMessage
+    id: root
 
     enum ContentType {
         Unknown = 0,
@@ -21,12 +21,10 @@ Rectangle {
         Invitation = 7
     }
 
-    property alias messageHeader: messageHeader
     property alias quickActions:quickActionsPanel.quickActions
     property alias statusChatInput: editComponent.inputComponent
     property alias linksComponent: linksLoader.sourceComponent
     property alias footerComponent: footer.sourceComponent
-    property alias timestamp: messageHeader.timestamp
 
     property string resendText: ""
     property string cancelButtonText: ""
@@ -39,8 +37,25 @@ Rectangle {
     property bool isAppWindowActive: false
     property bool editMode: false
     property bool isAReply: false
+
+    property bool hasMention: false
+    property bool isPinned: false
+    property string pinnedBy: ""
+    property bool hasExpired: false
+    property string timestamp: ""
+
     property StatusMessageDetails messageDetails: StatusMessageDetails {}
     property StatusMessageDetails replyDetails: StatusMessageDetails {}
+
+    property var timestampToString: (value) => {
+                                        const parsed = parseInt(value, 10);
+                                        return Qt.formatTime(new Date(parsed), "hh:mm");
+                                    }
+
+    property var timestampToTooltipString: (value) => {
+                                               const parsed = parseInt(value, 10);
+                                               return Qt.formatTime(new Date(parsed), "dddd, MMMM d, yyyy hh:mm:ss t");
+                                           }
 
     signal profilePictureClicked()
     signal senderNameClicked()
@@ -50,8 +65,40 @@ Rectangle {
     signal imageClicked(var imageSource)
     signal resendClicked()
 
-    height: childrenRect.height
-    color: hoverHandler.hovered ? (messageDetails.hasMention ? Theme.palette.mentionColor3 : messageDetails.isPinned ? Theme.palette.pinColor2 :  Theme.palette.baseColor2) : messageDetails.hasMention  ? Theme.palette.mentionColor4 : messageDetails.isPinned ? Theme.palette.pinColor3 : "transparent"
+    implicitWidth: messageLayout.implicitWidth
+                    + messageLayout.anchors.leftMargin
+                    + messageLayout.anchors.rightMargin
+
+    implicitHeight: messageLayout.implicitHeight
+                    + messageLayout.anchors.topMargin
+                    + messageLayout.anchors.bottomMargin
+
+    color: hoverHandler.hovered
+           ? (root.hasMention
+              ? Theme.palette.mentionColor3
+              : root.isPinned
+                ? Theme.palette.pinColor2
+                :  Theme.palette.baseColor2)
+           : root.hasMention
+             ? Theme.palette.mentionColor4
+             : root.isPinned
+               ? Theme.palette.pinColor3
+               : "transparent"
+
+    Rectangle {
+        anchors {
+            top: parent.top
+            bottom: parent.bottom
+            left: parent.left
+        }
+        width: 2
+        visible: root.isPinned || root.hasMention
+        color: root.isPinned
+               ? Theme.palette.pinColor1
+               : root.hasMention
+                 ? Theme.palette.mentionColor1
+                 : "transparent"
+    }
 
     HoverHandler {
         id: hoverHandler
@@ -59,29 +106,36 @@ Rectangle {
 
     ColumnLayout {
         id: messageLayout
-        width: parent.width
+        anchors.fill: parent
+        anchors.bottomMargin: 8
+
         StatusMessageReply {
             Layout.fillWidth: true
             visible: isAReply
-            replyDetails: statusMessage.replyDetails
-            onReplyProfileClicked: statusMessage.replyProfileClicked()
-            audioMessageInfoText: statusMessage.audioMessageInfoText
+            replyDetails: root.replyDetails
+            onReplyProfileClicked: root.replyProfileClicked()
+            audioMessageInfoText: root.audioMessageInfoText
         }
         RowLayout {
             spacing: 8
             Layout.fillWidth: true
             StatusSmartIdenticon {
                 id: profileImage
+
                 Layout.alignment: Qt.AlignTop
                 Layout.topMargin: 10
                 Layout.leftMargin: 16
-                image: messageDetails.profileImage
-                name: messageHeader.displayName
+
+                name: messageDetails.sender.userName
+                image: root.messageDetails.sender.profileImage.imageSettings
+                icon: root.messageDetails.sender.profileImage.iconSettings
+                ringSettings: root.messageDetails.sender.profileImage.ringSettings
+
                 MouseArea {
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     anchors.fill: parent
-                    onClicked: statusMessage.profilePictureClicked()
+                    onClicked: root.profilePictureClicked()
                 }
             }
             Column {
@@ -90,23 +144,20 @@ Rectangle {
                 Layout.topMargin: 10
                 Layout.fillWidth: true
                 StatusPinMessageDetails {
-                    visible: messageDetails.isPinned && !editMode
-                    pinnedMsgInfoText: statusMessage.pinnedMsgInfoText
-                    pinnedBy: messageDetails.pinnedBy
+                    visible: root.isPinned && !editMode
+                    pinnedMsgInfoText: root.pinnedMsgInfoText
+                    pinnedBy: root.pinnedBy
                 }
                 StatusMessageHeader {
-                    id: messageHeader
                     width: parent.width
-                    displayName: messageDetails.displayName
-                    secondaryName: messageDetails.secondaryName
-                    tertiaryDetail: messageDetails.chatID
-                    isMutualContact: messageDetails.isMutualContact
-                    trustIndicator: messageDetails.trustIndicator
-                    resendText: statusMessage.resendText
-                    showResendButton: messageDetails.hasExpired && messageDetails.amISender
-                    onClicked: statusMessage.senderNameClicked()
-                    onResendClicked: statusMessage.resendClicked()
+                    sender: messageDetails.sender
+                    resendText: root.resendText
+                    showResendButton: root.hasExpired && messageDetails.amISender
+                    onClicked: root.senderNameClicked()
+                    onResendClicked: root.resendClicked()
                     visible: !editMode
+                    timestamp.text: root.timestampToString(root.timestamp)
+                    timestamp.tooltip.text: root.timestampToTooltipString(root.timestamp)
                 }
                 Loader {
                     active: !editMode && !!messageDetails.messageText
@@ -122,14 +173,14 @@ Rectangle {
                     visible: active
                     sourceComponent: StatusImageMessage {
                         source: messageDetails.contentType === StatusMessage.ContentType.Image ? messageDetails.messageContent : ""
-                        onClicked: statusMessage.imageClicked()
+                        onClicked: root.imageClicked(source)
                         shapeType: messageDetails.amISender ? StatusImageMessage.ShapeType.RIGHT_ROUNDED : StatusImageMessage.ShapeType.LEFT_ROUNDED
                     }
                 }
                 StatusSticker {
                     visible: messageDetails.contentType === StatusMessage.ContentType.Sticker && !editMode
                     image.source: messageDetails.messageContent
-                    onLoaded: statusMessage.stickerLoaded()
+                    onLoaded: root.stickerLoaded()
                 }
                 Loader {
                     active: messageDetails.contentType === StatusMessage.ContentType.Audio && !editMode
@@ -137,7 +188,7 @@ Rectangle {
                     sourceComponent: StatusAudioMessage {
                         audioSource: messageDetails.messageContent
                         hovered: hoverHandler.hovered
-                        audioMessageInfoText: statusMessage.audioMessageInfoText
+                        audioMessageInfoText: root.audioMessageInfoText
                     }
                 }
                 Loader {
@@ -160,24 +211,24 @@ Rectangle {
                     width: parent.width
                     msgText: messageDetails.messageText
                     visible: editMode
-                    saveButtonText: statusMessage.saveButtonText
-                    cancelButtonText: statusMessage.cancelButtonText
+                    saveButtonText: root.saveButtonText
+                    cancelButtonText: root.cancelButtonText
                     onCancelEditClicked: editMode = false
                     onEditCompleted: {
                         editMode = false
-                        statusMessage.editCompleted(newMsgText)
+                        root.editCompleted(newMsgText)
                     }
                 }
                 StatusBaseText {
                     id: retryLbl
                     color: Theme.palette.dangerColor1
-                    text: statusMessage.resendText
+                    text: root.resendText
                     font.pixelSize: 12
-                    visible: messageDetails.hasExpired && messageDetails.amISender && !messageDetails.timestamp && !editMode
+                    visible: root.hasExpired && messageDetails.amISender && !root.timestamp && !editMode
                     MouseArea {
                         cursorShape: Qt.PointingHandCursor
                         anchors.fill: parent
-                        onClicked: statusMessage.resendClicked()
+                        onClicked: root.resendClicked()
                     }
                 }
                 Loader {

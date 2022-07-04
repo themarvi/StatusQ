@@ -10502,5 +10502,7 @@
         <file>src/StatusQ/Animations/SkeletonGradientStop.qml</file>
         <file>src/StatusQ/Animations/qmldir</file>
         <file>src/assets/img/icons/arrow-up.svg</file>
+        <file>src/StatusQ/Core/StatusProfileImageSettings.qml</file>
+        <file>src/StatusQ/Components/StatusMessageSenderDetails.qml</file>
     </qresource>
 </RCC>

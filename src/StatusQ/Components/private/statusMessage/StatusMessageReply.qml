@@ -56,8 +56,11 @@ Loader {
                 StatusSmartIdenticon {
                     id: profileImage
                     Layout.alignment: Qt.AlignTop
-                    image: replyDetails.profileImage
-                    name: replyDetails.displayName
+                    name: replyDetails.sender.userName
+                    image: replyDetails.sender.profileImage.imageSettings
+                    icon: replyDetails.sender.profileImage.iconSettings
+                    ringSettings: replyDetails.sender.profileImage.ringSettings
+
                     MouseArea {
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -74,7 +77,7 @@ Loader {
                     font.weight: Font.Medium
                     selectByMouse: true
                     readOnly: true
-                    text: replyDetails.displayName
+                    text: replyDetails.sender.displayName
                 }
             }
             StatusTextMessage {
